@@ -1,4 +1,7 @@
 #include <Windows.h>
+#include <vector>
+
+using namespace std;
 
 uintptr_t nGame = (uintptr_t)GetModuleHandle("game.dll");
 
@@ -28,6 +31,15 @@ typedef struct _WSAOVERLAPPED {
 
 typedef void (CALLBACK* WSAOVERLAPPED_COMPLETION_ROUTINE)();
 typedef WSAOVERLAPPED_COMPLETION_ROUTINE* LPWSAOVERLAPPED_COMPLETION_ROUTINE;
+
+//-----------------------------------------------------------------------------
+//- Variables
+
+vector<SOCKET> sockets;
+UINT position;
+
+//-
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 //- Memory
@@ -97,7 +109,11 @@ DWORD WINAPI WSARecv_Thread(LPVOID lpParameter)
 	LPWSASOCK lpWSASock = (LPWSASOCK)lpParameter;
 
 	if (lpWSASock->buf[1] == 0x04) // If player connected
+	{
 		Beep(500, 200);
+
+		position = lpWSASock->buf[0x28];
+	}
 
 	delete[] lpWSASock;
 

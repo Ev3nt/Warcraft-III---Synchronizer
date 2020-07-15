@@ -99,7 +99,7 @@ DWORD WINAPI WSARecv_Thread(LPVOID lpParameter)
 	if (lpWSASock->buf[1] == 0x04) // If player connected
 		Beep(500, 200);
 
-	delete lpWSASock;
+	delete[] lpWSASock;
 
 	return 0;
 }

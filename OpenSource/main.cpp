@@ -140,12 +140,12 @@ void ASM f00000001()
 		call edx
 		xor ecx, ecx
 		lea eax, [esi + 0x634]
-		mov[eax], ecx
-		mov[eax + 4], ecx
-		mov[eax + 8], ecx
-		mov[eax + 0xc], ecx
-		mov[eax + 0x10], ecx
-		mov[eax + 0x14], ecx
+		mov [eax], ecx
+		mov [eax + 4], ecx
+		mov [eax + 8], ecx
+		mov [eax + 0xc], ecx
+		mov [eax + 0x10], ecx
+		mov [eax + 0x14], ecx
 		mov edi, WSARecvProxy
 		cmp edi, ecx
 		mov edx, [esi + 0x74]
@@ -156,26 +156,26 @@ void ASM f00000001()
 		lea eax, [esp + 0x14]
 		push eax
 		mov eax, [esi + 4]
-		mov[esp + 0x1c], ecx
-		mov[esp + 0x18], ecx
+		mov [esp + 0x1c], ecx
+		mov [esp + 0x18], ecx
 		mov ebx, 0x5b4
 		sub ebx, edx
 		lea edx, [edx + esi + 0x78]
 		lea ecx, [esp + 0x1c]
 		push ecx
-		mov[esp + 0x28], edx
+		mov [esp + 0x28], edx
 		push 1
 		lea edx, [esp + 0x28]
 		push edx
 		push eax
-		mov[esp + 0x30], ebx
+		mov [esp + 0x30], ebx
 		call edi
 		cmp eax, -1
 		pop ebx
 		jne pSuccessful2
 		mov eax, nGame
 		add eax, 0x86d89c
-		call[eax]
+		call [eax]
 		cmp eax, 0x3e5
 		jne pSuccessful3
 	pSuccessful2 :
@@ -195,12 +195,12 @@ void ASM f00000001()
 		push eax
 		mov eax, nGame
 		add eax, 0x86d1c8
-		call[eax]
+		call [eax]
 		test eax, eax
 		jne pSuccessful2
 		mov eax, nGame
 		add eax, 0x86d1e4
-		call[eax]
+		call [eax]
 		cmp eax, 0x3e5
 		je pSuccessful2
 	pSuccessful3 :

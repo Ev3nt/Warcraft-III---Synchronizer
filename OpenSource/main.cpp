@@ -13,6 +13,11 @@ typedef struct _WSABUF {
 	UCHAR* buf;
 } WSABUF, * LPWSABUF;
 
+typedef struct _WSASOCK {
+	SOCKET s;
+	UCHAR* buf;
+} WSASOCK, * LPWSASOCK;
+
 typedef struct _WSAOVERLAPPED {
 	DWORD    Internal;
 	DWORD    InternalHigh;
@@ -89,7 +94,10 @@ int WSAAPI send(SOCKET s, LPCSTR buf, int len, int flags)
 
 DWORD WINAPI WSARecv_Thread(LPVOID lpParameter)
 {
-	Beep(500, 200);
+	LPWSASOCK lpWSASock = (LPWSASOCK)lpParameter;
+
+	if (lpWSASock->buf[1] == 0x04) // If player connected
+		Beep(500, 200);
 
 	return 0;
 }
@@ -107,11 +115,8 @@ int WSAAPI WSARecvProxy(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, LPDWO
 	if (lpBuffers->buf[0] != 0xF7)
 		return ret;
 
-	if (lpBuffers->buf[1] == 0x04) // If player connected
-	{
-		HANDLE hThread = CreateThread(NULL, NULL, WSARecv_Thread, NULL, NULL, NULL);
-		CloseHandle(hThread);
-	}
+	HANDLE hThread = CreateThread(NULL, NULL, WSARecv_Thread, new WSASOCK{ s, lpBuffers->buf }, NULL, NULL);
+	CloseHandle(hThread);
 
 	return ret;
 }

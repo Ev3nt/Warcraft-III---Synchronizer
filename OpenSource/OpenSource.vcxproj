@@ -78,7 +78,7 @@
     <OutDir>$(SolutionDir)\Build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\Build\$(Configuration)\Temp\</IntDir>
     <TargetName>$(SolutionName)</TargetName>
-    <TargetExt>.dll</TargetExt>
+    <TargetExt>.mix</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>

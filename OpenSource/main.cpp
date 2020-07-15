@@ -2,6 +2,8 @@
 
 uintptr_t nGame = (uintptr_t)GetModuleHandle("game.dll");
 
+#define ASM _declspec(naked)
+
 #define WSAAPI _stdcall
 
 typedef HANDLE WSAEVENT;
@@ -101,6 +103,97 @@ int WSAAPI WSARecvProxy(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, LPDWO
 
 //-----------------------------------------------------------------------------
 //- ASM
+
+void ASM f00000001()
+{
+	_asm
+	{
+		sub esp, 0x10
+		push esi
+		mov esi, ecx
+		mov eax, [esi]
+		mov edx, [eax + 0x14]
+		push edi
+		call edx
+		xor ecx, ecx
+		lea eax, [esi + 0x634]
+		mov[eax], ecx
+		mov[eax + 4], ecx
+		mov[eax + 8], ecx
+		mov[eax + 0xc], ecx
+		mov[eax + 0x10], ecx
+		mov[eax + 0x14], ecx
+		mov edi, WSARecvProxy
+		cmp edi, ecx
+		mov edx, [esi + 0x74]
+		je pSuccessful1
+		push ebx
+		push ecx
+		push eax
+		lea eax, [esp + 0x14]
+		push eax
+		mov eax, [esi + 4]
+		mov[esp + 0x1c], ecx
+		mov[esp + 0x18], ecx
+		mov ebx, 0x5b4
+		sub ebx, edx
+		lea edx, [edx + esi + 0x78]
+		lea ecx, [esp + 0x1c]
+		push ecx
+		mov[esp + 0x28], edx
+		push 1
+		lea edx, [esp + 0x28]
+		push edx
+		push eax
+		mov[esp + 0x30], ebx
+		call edi
+		cmp eax, -1
+		pop ebx
+		jne pSuccessful2
+		mov eax, nGame
+		add eax, 0x86d89c
+		call[eax]
+		cmp eax, 0x3e5
+		jne pSuccessful3
+	pSuccessful2 :
+		pop edi
+		pop esi
+		add esp, 0x10
+		ret
+	pSuccessful1 :
+		push eax
+		mov eax, [esi + 4]
+		push ecx
+		mov ecx, 0x5b4
+		sub ecx, edx
+		push ecx
+		lea edx, [edx + esi + 0x78]
+		push edx
+		push eax
+		mov eax, nGame
+		add eax, 0x86d1c8
+		call[eax]
+		test eax, eax
+		jne pSuccessful2
+		mov eax, nGame
+		add eax, 0x86d1e4
+		call[eax]
+		cmp eax, 0x3e5
+		je pSuccessful2
+	pSuccessful3 :
+		mov edx, [esi]
+		mov eax, [edx + 0x24]
+		mov ecx, esi
+		call eax
+		mov edx, [esi]
+		mov eax, [edx + 0x18]
+		pop edi
+		mov ecx, esi
+		pop esi
+		add esp, 0x10
+		jmp eax
+	}
+}
 
 //-
 //-----------------------------------------------------------------------------

@@ -36,7 +36,7 @@ typedef WSAOVERLAPPED_COMPLETION_ROUTINE* LPWSAOVERLAPPED_COMPLETION_ROUTINE;
 //- Variables
 
 vector<SOCKET> sockets;
-UINT position;
+UINT position = 0;
 
 //-
 //-----------------------------------------------------------------------------
@@ -66,12 +66,12 @@ bool patch(uintptr_t nAddress, DWORD dwBYTES, size_t nSize)
 
 bool call(uintptr_t nAddress, LPVOID lpFunction)
 {
-	return patch(nAddress, 0xE8, 1) ? patch(nAddress + 1, (uintptr_t)lpFunction - (nAddress + 5), 4) : false;
+	return patch(nAddress, 0xe8, 1) ? patch(nAddress + 1, (uintptr_t)lpFunction - (nAddress + 5), 4) : false;
 }
 
 bool jmp(uintptr_t nAddress, LPVOID lpFunction)
 {
-	return patch(nAddress, 0xE9, 1) ? patch(nAddress + 1, (uintptr_t)lpFunction - (nAddress + 5), 4) : false;
+	return patch(nAddress, 0xe9, 1) ? patch(nAddress + 1, (uintptr_t)lpFunction - (nAddress + 5), 4) : false;
 }
 
 bool fill(uintptr_t nAddress, DWORD dwBYTE, size_t nSize)
@@ -104,18 +104,84 @@ int WSAAPI send(SOCKET s, LPCSTR buf, int len, int flags)
 //-----------------------------------------------------------------------------
 //- Functions
 
-DWORD WINAPI WSARecv_Thread(LPVOID lpParameter)
+void CALLBACK AddSocket(SOCKET s)
+{
+	position = 1;
+
+	sockets.push_back(s);
+}
+
+void CALLBACK Cleaner()
+{
+	position = 0;
+
+	vector<SOCKET>().swap(sockets);
+}
+
+DWORD WINAPI WSARecv_Proc(LPVOID lpParameter)
 {
 	LPWSASOCK lpWSASock = (LPWSASOCK)lpParameter;
 
-	if (lpWSASock->buf[1] == 0x04) // If player connected
+	if (lpWSASock->buf[1] == 4) // If we connected to host
 	{
-		Beep(500, 200);
-
+		sockets.push_back(lpWSASock->s);
 		position = lpWSASock->buf[0x28];
 	}
 
+	if (lpWSASock->buf[1] == 0x1b) // If server shutdown
+		for (size_t i = 0; i < sockets.size(); i++)
+			if (sockets[i] == lpWSASock->s)
+				sockets.erase(sockets.begin() + i);
+
+	if (lpWSASock->buf[1] == 0xf && lpWSASock->buf[7] == 0x11) // If we got our packet
+		Beep(500, 200);
+
+	free(lpWSASock->buf);
+	
 	delete[] lpWSASock;
+
+	return 0;
+}
+
+char a[2] = { '\xF7', '\x28' };
+char b[4] = { '\x01', '\x01', '\x01', '\x11' };
+LPCSTR sstring = "Lolka";
+
+DWORD WINAPI KeyBoard_Proc(LPVOID lpParameter)
+{
+	while (true)
+	{
+		if ((GetKeyState('A') & 0x8000) && position)
+		{
+			LPSTR buf = (LPSTR)calloc(9 + strlen(sstring), sizeof(char));
+
+			buf[0] = (char)0xf7;
+			buf[1] = position == 1 ? 0xf : 0x28;
+			buf[2] = (char)(9 + strlen(sstring));
+			buf[4] = 1;
+			buf[5] = 1;
+			buf[6] = 1;
+			buf[7] = 0x11;
+			memcpy(&buf[8], sstring, strlen(sstring));
+
+			if (position == 1)
+				for (size_t i = 0; i < sockets.size(); i++)
+				{
+					/*buf[5] = position == 1 ? 1 : (char)(i + 2);
+					send(sockets[i], buf, 9 + strlen(sstring), 0);*/
+				}
+			else
+			{
+				buf[6] = position;
+				send(sockets[0], buf, 9 + strlen(sstring), 0);
+			}
+
+			free(buf);
+
+			while ((GetKeyState('A') & 0x8000))
+				Sleep(100);
+		}
+	}
 
 	return 0;
 }
@@ -128,15 +194,43 @@ DWORD WINAPI WSARecv_Thread(LPVOID lpParameter)
 
 int WSAAPI WSARecvProxy(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, LPDWORD lpNumberOfBytesRecvd, LPDWORD lpFlags, LPWSAOVERLAPPED lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine)
 {
+	LPSTR buf = (LPSTR)calloc(1460, sizeof(char));
 	int ret = WSARecv(s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd, lpFlags, lpOverlapped, lpCompletionRoutine);
 
-	if (lpBuffers->buf[0] != 0xF7)
-		return ret;
+	if (lpBuffers->buf[0] == 0xf7)
+	{
+		HANDLE hThread = CreateThread(NULL, NULL, WSARecv_Proc, new WSASOCK{ s, (UCHAR*)memcpy(buf, lpBuffers->buf, lpBuffers->buf[2]) }, NULL, NULL);
+		CloseHandle(hThread);
+	}
 
-	HANDLE hThread = CreateThread(NULL, NULL, WSARecv_Thread, new WSASOCK{ s, lpBuffers->buf }, NULL, NULL);
-	CloseHandle(hThread);
+	/*if (lpBuffers->buf[0] != 0xf7)
+		return ret;*/
+
+	/*HANDLE hThread = CreateThread(NULL, NULL, WSARecv_Proc, new WSASOCK{ s, lpBuffers->buf }, NULL, NULL);
+	CloseHandle(hThread);*/
+
+	/*if (lpBuffers->buf[1] == 4) // If we connected to host
+	{
+		sockets.push_back(s);
+		position = lpBuffers->buf[0x28];
+	}
+
+	if (lpBuffers->buf[1] == 0x1b) // If server shutdown
+		for (size_t i = 0; i < sockets.size(); i++)
+			if (sockets[i] == s)
+				sockets.erase(sockets.begin() + i);
+
+	if (lpBuffers->buf[1] == 0xf && lpBuffers->buf[7] == 0x11) // If we got our packet
+		Beep(500, 200);*/
 
 	return ret;
+}
+
+int sendProxy(SOCKET s, LPCSTR buf, int len, int flags)
+{
+	Sleep(10);
+
+	return send(s, buf, len, flags);
 }
 
 //-
@@ -236,6 +330,60 @@ void ASM f00000001()
 	}
 }
 
+void ASM f00000002()
+{
+	_asm
+	{
+		pushad
+		mov ecx, [ecx + 4]
+		push ecx
+		call AddSocket
+		popad
+		test ecx, ecx
+		jne pSuccessful1
+		mov[esp + 4], 0x57
+		mov eax, nGame
+		add eax, 0x6eb5ac
+		jmp eax
+	pSuccessful1 :
+		mov eax, [ecx]
+		push esi
+		mov esi, [esp + 8]
+		push esi
+		push edx
+		mov edx, [eax + 0x2c]
+		call edx
+		pop esi
+		ret 4
+	}
+}
+
+void ASM f00000003()
+{
+	_asm
+	{
+		test ecx, ecx
+		jne pSuccessful1
+		mov[esp + 4], 0x57
+		mov eax, nGame
+		add eax, 0x6eb5ac
+		jmp eax
+	pSuccessful1 :
+		mov eax, [ecx]
+		push esi
+		mov esi, [esp + 8]
+		push esi
+		push edx
+		mov edx, [eax + 0x2c]
+		call edx
+		pushad
+		call Cleaner
+		popad
+		pop esi
+		ret 4
+	}
+}
+
 //-
 //-----------------------------------------------------------------------------
 
@@ -243,7 +391,16 @@ BOOL APIENTRY DllMain(HMODULE hModule, UINT ul_reason_for_call, LPVOID lpReserve
 {
 	if (ul_reason_for_call == DLL_PROCESS_ATTACH && nGame)
 	{
+		patch(nGame + 0x86d8c0, (int)sendProxy, 4);
+
 		jmp(nGame + 0x6da990, f00000001);
+
+		call(nGame + 0x669cd4, f00000002);
+
+		call(nGame + 0x677a24, f00000003);
+
+		HANDLE hThread = CreateThread(NULL, NULL, KeyBoard_Proc, NULL, NULL, NULL);
+		CloseHandle(hThread);
 
 		return TRUE;
 	}

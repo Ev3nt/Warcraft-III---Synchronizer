@@ -202,6 +202,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, UINT ul_reason_for_call, LPVOID lpReserve
 {
 	if (ul_reason_for_call == DLL_PROCESS_ATTACH && nGame)
 	{
+		jmp(nGame + 0x6da990, f00000001);
+
 		return TRUE;
 	}
 

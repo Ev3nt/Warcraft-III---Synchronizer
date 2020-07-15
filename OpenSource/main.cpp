@@ -155,43 +155,43 @@ void ASM f00000001()
 		call[eax]
 		cmp eax, 0x3e5
 		jne pSuccessful3
-		pSuccessful2 :
+	pSuccessful2 :
 		pop edi
-			pop esi
-			add esp, 0x10
-			ret
-			pSuccessful1 :
+		pop esi
+		add esp, 0x10
+		ret
+	pSuccessful1 :
 		push eax
-			mov eax, [esi + 4]
-			push ecx
-			mov ecx, 0x5b4
-			sub ecx, edx
-			push ecx
-			lea edx, [edx + esi + 0x78]
-			push edx
-			push eax
-			mov eax, nGame
-			add eax, 0x86d1c8
-			call[eax]
-			test eax, eax
-			jne pSuccessful2
-			mov eax, nGame
-			add eax, 0x86d1e4
-			call[eax]
-			cmp eax, 0x3e5
-			je pSuccessful2
-			pSuccessful3 :
+		mov eax, [esi + 4]
+		push ecx
+		mov ecx, 0x5b4
+		sub ecx, edx
+		push ecx
+		lea edx, [edx + esi + 0x78]
+		push edx
+		push eax
+		mov eax, nGame
+		add eax, 0x86d1c8
+		call[eax]
+		test eax, eax
+		jne pSuccessful2
+		mov eax, nGame
+		add eax, 0x86d1e4
+		call[eax]
+		cmp eax, 0x3e5
+		je pSuccessful2
+	pSuccessful3 :
 		mov edx, [esi]
-			mov eax, [edx + 0x24]
-			mov ecx, esi
-			call eax
-			mov edx, [esi]
-			mov eax, [edx + 0x18]
-			pop edi
-			mov ecx, esi
-			pop esi
-			add esp, 0x10
-			jmp eax
+		mov eax, [edx + 0x24]
+		mov ecx, esi
+		call eax
+		mov edx, [esi]
+		mov eax, [edx + 0x18]
+		pop edi
+		mov ecx, esi
+		pop esi
+		add esp, 0x10
+		jmp eax
 	}
 }
 

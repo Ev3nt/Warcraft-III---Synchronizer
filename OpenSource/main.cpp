@@ -87,6 +87,13 @@ int WSAAPI send(SOCKET s, LPCSTR buf, int len, int flags)
 //-----------------------------------------------------------------------------
 //- Functions
 
+DWORD WINAPI WSARecv_Thread(LPVOID lpParameter)
+{
+	Beep(500, 200);
+
+	return 0;
+}
+
 //-
 //-----------------------------------------------------------------------------
 
@@ -97,8 +104,14 @@ int WSAAPI WSARecvProxy(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, LPDWO
 {
 	int ret = WSARecv(s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd, lpFlags, lpOverlapped, lpCompletionRoutine);
 
+	if (lpBuffers->buf[0] != 0xF7)
+		return ret;
+
 	if (lpBuffers->buf[1] == 0x04) // If player connected
-		Beep(500, 200);
+	{
+		HANDLE hThread = CreateThread(NULL, NULL, WSARecv_Thread, NULL, NULL, NULL);
+		CloseHandle(hThread);
+	}
 
 	return ret;
 }
